@@ -6,6 +6,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,22 +28,26 @@ public class SecurityServiceImpl implements SecurityServices {
 	
 	@Override
 	public boolean login(String username, String password) {
-		UserDetails userDetails = userService.loadUserByUsername(username);
-		
-		UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(userDetails, password, 
-				userDetails.getAuthorities());
-		if(passwordEncoder.matches(password, userDetails.getPassword())) 
-		{
-			authenticationManager.authenticate(token);
-			boolean authenticationResult = token.isAuthenticated();
-			if(authenticationResult) 
+		try {
+			UserDetails userDetails = userService.loadUserByUsername(username);
+			UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(userDetails, password, 
+					userDetails.getAuthorities());
+			if(passwordEncoder.matches(password, userDetails.getPassword())) 
 			{
-				SecurityContextHolder.getContext().setAuthentication(token);
+				authenticationManager.authenticate(token);
+				boolean authenticationResult = token.isAuthenticated();
+				if(authenticationResult) 
+				{
+					SecurityContextHolder.getContext().setAuthentication(token);
+					return authenticationResult;
+				}
 				return authenticationResult;
 			}
-			return authenticationResult;
-		}
-		else {
+			else {
+				return false;
+			}
+		}catch(UsernameNotFoundException e) {
+			System.out.println(e);
 			return false;
 		}
 	}
